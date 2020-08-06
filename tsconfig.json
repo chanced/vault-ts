@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "importHelpers": true,
+    "diagnostics": true,
+    "skipLibCheck": true,
+    "preserveConstEnums": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "lib": ["ES2015"],
+    "module": "commonjs",
+    "target": "ES2019",
+    "strict": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "rootDir": "./",
+    "declaration": true
+  },
+
+  "include": ["src/**/*"]
+}
