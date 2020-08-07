@@ -6,9 +6,12 @@
   "author": "chance dinkins",
   "license": "MIT",
   "dependencies": {
+    "@types/debug": "^4.1.5",
     "@types/ms": "^0.7.31",
     "@types/secure-json-parse": "^1.0.2",
+    "debug": "^4.1.1",
     "got": "^11.5.1",
+    "json-schema-to-typescript": "^9.1.1",
     "ms": "^2.1.2",
     "secure-json-parse": "^2.1.0"
   },

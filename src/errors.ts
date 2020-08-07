@@ -1,4 +1,7 @@
-import { HandlerFunction } from 'got/dist/source';
+import got, { HandlerFunction } from 'got/dist/source';
+import Debug from 'debug';
+const debug = Debug('vault');
+const debugError = Debug('vault:error');
 
 function getMessageFromErrorCode(statusCode: number | string | undefined) {
   if (typeof statusCode === 'string') {
@@ -28,12 +31,31 @@ function getMessageFromErrorCode(statusCode: number | string | undefined) {
       return undefined;
   }
 }
+
+interface VaultErrorParams {
+  statusCode?: number | string;
+  retryCount?: number;
+  errors?: string[];
+  body: unknown;
+  stack?: string;
+  name: string;
+}
 export class VaultError extends Error {
-  public errors: string[];
-  public code?: number;
-  constructor(message: string, errors?: string[]) {
-    super(message);
-    this.errors = [];
+  name: string;
+  errors: string[];
+  statusCode?: number;
+  retryCount?: number;
+  body?: unknown;
+  stack?: string;
+
+  constructor({ name, errors, statusCode, retryCount, body, stack }: VaultErrorParams) {
+    super(getMessageFromErrorCode(statusCode));
+    this.statusCode = typeof statusCode === 'string' ? Number.parseInt(statusCode) : statusCode;
+    this.errors = errors || [];
+    this.name = name;
+    this.retryCount = retryCount;
+    this.stack = stack;
+    this.body = body;
   }
 }
 
@@ -41,7 +63,35 @@ export const errorHandler: HandlerFunction = async (options, next) => {
   try {
     const response = await next(options);
     return response;
-  } catch (error) {
-    throw new VaultError(error);
+  } catch (err) {
+    if (err instanceof got.HTTPError) {
+      const body = err.response?.body;
+      const retryCount = err.response.retryCount;
+      const statusCode = err.code;
+      let errors: string[] | undefined;
+      if (typeof body === 'string' && body.length) {
+        try {
+          const parsed = JSON.parse(body);
+          if (parsed) {
+            const parsedErrors = parsed['errors'];
+            if (Array.isArray(parsedErrors)) {
+              errors = parsedErrors;
+            }
+          }
+        } catch (parseError) {
+          debugError(parseError);
+        }
+      }
+
+      throw new VaultError({
+        statusCode,
+        retryCount,
+        name: err.name,
+        errors,
+        body,
+        stack: err.stack
+      });
+    }
+    throw err;
   }
 };

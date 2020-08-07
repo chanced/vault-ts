@@ -5,8 +5,7 @@ import { VaultAuthLease } from './lease';
 import { VaultError } from '../errors';
 import { loadPayload } from '..';
 
-const authVault = function (this: VaultClient) {
-  const vault = this;
+const authVault = function (vault: VaultClient) {
   return {
     kubernetes: kubernetes.bind(vault)
   };

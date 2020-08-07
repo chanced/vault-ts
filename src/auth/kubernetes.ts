@@ -7,7 +7,10 @@ import { getRandomNumber } from '../util';
 import { authLeaseDelayCalculator, VaultAuthLease } from './lease';
 import { VaultLoginParams, execVaultLogin, VaultAuthMethod } from './index';
 import { MountedVaultMethods } from '..';
-import { getMountedMethods } from '../index';
+import { getMountedMethods } from '../util';
+
+//TODO: A lot of this can probably be extrapolated out across auth methods. Typings vary across methods though...
+//TODO: Add functions to returned types. readRole would return a Role<KubernetesRole> that has a delete function.
 
 /**
  * This is the API for the Vault Kubernetes auth method plugin. To learn
@@ -16,11 +19,8 @@ import { getMountedMethods } from '../index';
  */
 export type KubernetesAuthVault = ReturnType<typeof kubernetesAuthVault> & VaultAuthMethod;
 
-export const kubernetesAuthVault = function (this: VaultClient, mountPoint: string | undefined) {
-  const vault = this;
-  mountPoint = mountPoint || 'kubernetes';
-
-  if (!mountPoint.startsWith('auth/')) {
+export const kubernetesAuthVault = function (this: AuthVault, mountPoint: string = 'kubernetes') {
+  if (!mountPoint.startsWith('auth/') || !mountPoint.startsWith('/auth/')) {
     mountPoint = `auth/${mountPoint}`;
   }
   const mountedMethods = getMountedMethods(mountPoint, vault);
@@ -55,6 +55,7 @@ export const kubernetesAuthVault = function (this: VaultClient, mountPoint: stri
      * specific to the role type must be set on the role. These are applied
      * to the authenticated entities attempting to login.
      */
+
     createRole: <ReturnType = unknown>(role: VaultKubernetesRole) =>
       new VaultResponse<ReturnType>({
         exec: () => mountedMethods.post<ReturnType>(`/role/${role.name}`, role)
@@ -64,7 +65,6 @@ export const kubernetesAuthVault = function (this: VaultClient, mountPoint: stri
      *
      * @see https://www.vaultproject.io/api-docs/auth/kubernetes#create-role
      */
-
     readRole: (name: string) =>
       new VaultResponse<VaultKubernetesRole>({
         exec: () => mountedMethods.get<VaultKubernetesRole>(`/role/${name}`)
